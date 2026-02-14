@@ -8,6 +8,9 @@ interface SavingItem {
 }
 
 export const TopSavingsCard = ({ savings = [] }: { savings: SavingItem[] }) => {
+  // Take only the first 5 items from the array
+  const displaySavings = (savings || []).slice(0, 5);
+
   return (
     <div className="bg-white dark:bg-[#334155] p-6 rounded-[2rem] shadow-xl shadow-slate-900/5 border border-slate-100 dark:border-white/5 transition-all">
       <div className="flex items-center justify-between mb-6">
@@ -21,8 +24,8 @@ export const TopSavingsCard = ({ savings = [] }: { savings: SavingItem[] }) => {
       </div>
 
       <div className="space-y-3">
-        {savings.length > 0 ? (
-          savings.map((s, i) => (
+        {displaySavings.length > 0 ? (
+          displaySavings.map((s, i) => (
             <div 
               key={i} 
               className="group relative flex justify-between items-start p-4 bg-slate-50 dark:bg-[#1e293b] rounded-2xl border border-transparent hover:border-emerald-500/20 hover:bg-white dark:hover:bg-[#1e293b] transition-all duration-300 shadow-sm hover:shadow-md"
@@ -32,7 +35,6 @@ export const TopSavingsCard = ({ savings = [] }: { savings: SavingItem[] }) => {
                   <TrendingDown className="w-5 h-5" />
                 </div>
                 <div>
-                  {/* REMOVED truncate - Now shows full name like "Telur Gred A (30s)" */}
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase leading-tight mb-1">
                     {s.item}
                   </p>
