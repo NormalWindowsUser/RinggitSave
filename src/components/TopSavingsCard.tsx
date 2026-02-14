@@ -18,7 +18,7 @@ export const TopSavingsCard = ({ savings = [] }: { savings: SavingItem[] }) => {
           <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-xl">
             <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <h3 className="font-black text-slate-900 dark:text-white tracking-tight">Top Savings Today</h3>
+          <h3 className="font-black text-slate-900 dark:text-white tracking-tight">Top 5 Savings Today</h3>
         </div>
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live</span>
       </div>
