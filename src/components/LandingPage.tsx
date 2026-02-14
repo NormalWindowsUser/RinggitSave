@@ -1,239 +1,140 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { MapPin, Clock, Search, ShoppingBag, Activity, AlertTriangle, MousePointer2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import { PriceCheckCard } from './PriceCheckCard';
-import { TopSavingsCard } from './TopSavingsCard';
-import { RecentReportsCard } from './RecentReportsCard';
-import { useGroceryData } from '../hooks/useGroceryData';
-import { 
-  Loader2, Building2, Plus, 
-  MapPin, Gift, ChevronDown, ChevronRight, Store 
-} from 'lucide-react';
 
-export const LandingPage = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [states, setStates] = useState<any[]>([]);
-  const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
-  
-  const [visibleCount, setVisibleCount] = useState(5);
-  const { groceryItems, priceReports, topSavings, activeUsers, loading } = useGroceryData();
+export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-    
-    const fetchStates = async () => {
-      const { data } = await supabase.from('states').select('*').order('name');
-      if (data) setStates(data);
-    };
-    fetchStates();
-  }, []);
+  // Utility to format time since report
+  const formatTime = (ds: string) => {
+    const diff = Math.floor((new Date().getTime() - new Date(ds).getTime()) / 60000);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+  };
 
-  // --- DERIVED DATA & FILTER LOGIC ---
+  // Flagging system for data integrity (Practicality Metric)
+  const handleFlagReport = async (reportId: string) => {
+    const reason = window.prompt("Why are you flagging this report? (e.g., Fake Price, Wrong Store)");
+    if (!reason) return;
 
-  const availableStores = useMemo(() => {
-    const reportsInRegion = selectedStateId 
-      ? priceReports.filter((r: any) => r.state_id === selectedStateId)
-      : priceReports;
-    
-    const stores = reportsInRegion.map((r: any) => r.location);
-    return [...new Set(stores)].sort();
-  }, [selectedStateId, priceReports]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Please log in to flag reports.");
+      return;
+    }
 
-  const filteredReports = useMemo(() => {
-    return priceReports.filter((report: any) => {
-      const matchesState = !selectedStateId || report.state_id === selectedStateId;
-      const matchesStore = !selectedStore || report.location === selectedStore;
-      return matchesState && matchesStore;
-    });
-  }, [selectedStateId, selectedStore, priceReports]);
+    const { error } = await supabase.from('report_flags').insert([
+      { report_id: reportId, reporter_id: user.id, reason }
+    ]);
 
-  const paginatedReports = filteredReports.slice(0, visibleCount);
-  const hasMore = filteredReports.length > visibleCount;
-  const uniqueLocationsCount = [...new Set(filteredReports.map((r: any) => r.location))].length;
+    if (error) {
+      alert("Error submitting flag: " + error.message);
+    } else {
+      alert("Report flagged for review. Thank you for keeping Ringgit-Save accurate!");
+    }
+  };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#1e293b]">
-      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-    </div>
+  const filteredReports = reports.filter((r) =>
+    r.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.store_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#1e293b] pb-24 transition-colors overflow-y-auto no-scrollbar">
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-      
-      {/* --- HEADER --- */}
-      <div className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-white/5 pt-8 pb-6 px-6">
-        <div className="max-w-screen-lg mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user ? `Hello, ${user.email?.split('@')[0]}` : 'Ringgit-Save'}
-            </h1>
-            
-            <div className="flex flex-wrap items-center gap-4 mt-2">
-              {/* REGION SELECTOR */}
-              <div className="flex items-center gap-2 group relative w-fit">
-                <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-                <div className="relative flex items-center">
-                  <select 
-                    value={selectedStateId || ''} 
-                    onChange={(e) => {
-                      setSelectedStateId(e.target.value || null);
-                      setSelectedStore(null);
-                      setVisibleCount(5); 
-                    }}
-                    className="bg-transparent text-xs font-bold text-gray-500 dark:text-gray-400 outline-none appearance-none pr-5 cursor-pointer hover:text-emerald-600 transition-colors z-10"
-                  >
-                    <option value="">Satu Malaysia</option>
-                    {states.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 pointer-events-none group-hover:text-emerald-600 transition-colors" />
-                </div>
-              </div>
+    <div className="bg-white dark:bg-[#334155] rounded-[2.5rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-xl shadow-slate-900/5 transition-all">
+      {/* Header with Activity Indicator */}
+      <div className="p-6 border-b border-slate-50 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-[#1e293b]/50">
+        <div className="flex items-center gap-2 font-black text-slate-700 dark:text-white uppercase tracking-wider text-sm">
+          <Activity className="w-5 h-5 text-blue-500" /> 
+          Recent Activity
+        </div>
+        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-black rounded-full uppercase tracking-widest">
+          Live Feed
+        </span>
+      </div>
 
-              {/* STALL SELECTOR */}
-              <div className="flex items-center gap-2 group relative w-fit">
-                <Store className="w-3.5 h-3.5 text-blue-500" />
-                <div className="relative flex items-center">
-                  <select 
-                    value={selectedStore || ''} 
-                    onChange={(e) => {
-                      setSelectedStore(e.target.value || null);
-                      setVisibleCount(5); 
-                    }}
-                    className="bg-transparent text-xs font-bold text-gray-500 dark:text-gray-400 outline-none appearance-none pr-5 cursor-pointer hover:text-blue-600 transition-colors z-10"
-                  >
-                    <option value="">All Stalls</option>
-                    {availableStores.map(store => (
-                      <option key={store} value={store}>{store}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 pointer-events-none group-hover:text-blue-600 transition-colors" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {!user && (
-            <button 
-              onClick={() => navigate('/login')}
-              className="px-4 py-2 bg-gray-100 dark:bg-white/5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 transition-all active:scale-95 w-fit"
-            >
-              Sign In
-            </button>
-          )}
+      {/* Search Bar - Real-time Filtering */}
+      <div className="p-4 bg-white dark:bg-[#334155]">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search items, stores, or locations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#1e293b] border border-slate-100 dark:border-white/5 rounded-2xl text-sm dark:text-white outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+          />
         </div>
       </div>
 
-      <div className="max-w-screen-lg mx-auto px-4 mt-6 space-y-6">
-        
-        {/* STATS */}
-        <div className="grid grid-cols-3 gap-4">
-          <SimpleStat label="Reports" value={filteredReports.length} />
-          <SimpleStat label="Users" value={activeUsers} />
-          <SimpleStat label="Stores" value={uniqueLocationsCount} />
-        </div>
-
-        {/* PRIMARY ACTION */}
-        <button 
-          onClick={() => navigate(user ? '/report' : '/login')} 
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Submit Contribution</span>
-        </button>
-
-        {/* CONTENT GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h3 className="px-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Price Check</h3>
-            <PriceCheckCard items={groceryItems} reports={filteredReports} />
-          </div>
-          <div className="space-y-3">
-            <h3 className="px-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Best Deals</h3>
-            <TopSavingsCard savings={topSavings} />
-          </div>
-        </div>
-
-        {/* ACTIVITY LIST */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center px-2">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Recent Activity</h3>
-            <span className="text-[10px] font-bold text-emerald-500">Showing {paginatedReports.length} of {filteredReports.length}</span>
-          </div>
-          
-          <div className="bg-white dark:bg-[#334155] rounded-3xl overflow-hidden border border-gray-200 dark:border-white/5 shadow-sm">
-            <RecentReportsCard reports={paginatedReports} showDate={true} />
-            
-            {hasMore && (
-              <button 
-                onClick={() => setVisibleCount(prev => prev + 5)}
-                className="w-full py-4 bg-gray-50 dark:bg-white/5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border-t border-gray-100 dark:border-white/5 flex items-center justify-center gap-1 hover:bg-gray-100 transition-colors"
-              >
-                View More Reports <ChevronRight className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* --- ADDITIONAL TOOLS & RESOURCES --- */}
-        <div className="space-y-3 pb-12">
-          <h3 className="px-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            Useful Websites
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* SARA CHECKER */}
-            <a 
-              href="https://checkstatus.mykasih.net/sara2/checkstatus" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="group relative bg-white dark:bg-[#334155] p-5 rounded-3xl border border-gray-200 dark:border-white/5 flex items-center gap-4 shadow-sm hover:shadow-md hover:border-blue-500/30 transition-all active:scale-[0.98]"
-            >
-              <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl group-hover:scale-110 transition-transform">
-                <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      {/* Scrollable Report List - No buttons, automatic scroll after 5 items */}
+      <div className="divide-y divide-slate-50 dark:divide-white/5 max-h-[480px] overflow-y-auto custom-scrollbar">
+        {filteredReports.length > 0 ? (
+          filteredReports.map((r: any) => (
+            <div key={r.id} className="p-5 flex justify-between items-start hover:bg-slate-50 dark:hover:bg-[#1e293b]/50 transition-colors group">
+              <div className="flex gap-4">
+                <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-2xl shrink-0 group-hover:scale-110 transition-transform">
+                  <ShoppingBag className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-tight mb-1">
+                    {r.item_name}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">
+                      {r.store_name} <span className="mx-1 opacity-30">•</span> {r.location}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex-grow">
-                <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">Semakan STR / SARA</p>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Semak Kelayakan SARA</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">Semak status bantuan MyKasih secara terus.</p>
+              
+              <div className="flex flex-col items-end shrink-0 ml-4">
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => handleFlagReport(r.id)}
+                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                    title="Flag as fake"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </button>
+                  <p className="font-black text-blue-600 dark:text-blue-400 text-lg leading-none">
+                    RM {Number(r.price).toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-1 text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">
+                  <Clock className="w-3 h-3" />
+                  {formatTime(r.created_at)}
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-            </a>
-
-            {/* MS REWARDS */}
-            <a 
-              href="https://rewards.bing.com/welcome" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="group relative bg-white dark:bg-[#334155] p-5 rounded-3xl border border-gray-200 dark:border-white/5 flex items-center gap-4 shadow-sm hover:shadow-md hover:border-orange-500/30 transition-all active:scale-[0.98]"
-            >
-              <div className="p-3 bg-orange-50 dark:bg-orange-500/10 rounded-2xl group-hover:scale-110 transition-transform">
-                <Gift className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div className="flex-grow">
-                <p className="text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-tighter">Free Vouchers</p>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Microsoft Rewards</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">Tebus baucar Lotus's / Grab.</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-            </a>
+            </div>
+          ))
+        ) : (
+          <div className="p-12 text-center">
+            <div className="flex justify-center mb-3">
+              <Search className="w-10 h-10 text-slate-200" />
+            </div>
+            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">No matching reports</p>
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Footer & Scroll Indicator */}
+      <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 flex flex-col items-center gap-2">
+        {filteredReports.length > 5 && (
+          <div className="flex items-center gap-1.5 animate-bounce mb-1">
+            <MousePointer2 className="w-3 h-3 text-blue-500 rotate-180" />
+            <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest">
+              Scroll down to view all activity
+            </span>
+          </div>
+        )}
+        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em]">
+          Community-Driven Intelligence
+        </p>
       </div>
     </div>
   );
 };
-
-const SimpleStat = ({ label, value }: { label: string, value: number }) => (
-  <div className="bg-white dark:bg-[#334155] p-4 rounded-2xl border border-gray-200 dark:border-white/5 shadow-sm transition-all">
-    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 opacity-70">{label}</p>
-    <p className="text-xl font-bold dark:text-white">{value}</p>
-  </div>
-);
