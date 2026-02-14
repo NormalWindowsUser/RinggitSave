@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, Search, ShoppingBag, Activity, AlertTriangle } from 'lucide-react';
+import { MapPin, Clock, Search, ShoppingBag, Activity, AlertTriangle, MousePointer2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
@@ -42,6 +42,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
 
   return (
     <div className="bg-white dark:bg-[#334155] rounded-[2.5rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-xl shadow-slate-900/5 transition-all">
+      {/* Header */}
       <div className="p-6 border-b border-slate-50 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-[#1e293b]/50">
         <div className="flex items-center gap-2 font-black text-slate-700 dark:text-white uppercase tracking-wider text-sm">
           <Activity className="w-5 h-5 text-blue-500" /> 
@@ -52,6 +53,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </span>
       </div>
 
+      {/* Search Bar */}
       <div className="p-4 bg-white dark:bg-[#334155]">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
@@ -65,7 +67,8 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </div>
       </div>
 
-      <div className="divide-y divide-slate-50 dark:divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
+      {/* Reports List - Scrollable after 5 items (~480px) */}
+      <div className="divide-y divide-slate-50 dark:divide-white/5 max-h-[480px] overflow-y-auto custom-scrollbar relative">
         {filteredReports.length > 0 ? (
           filteredReports.map((r: any) => (
             <div key={r.id} className="p-5 flex justify-between items-start hover:bg-slate-50 dark:hover:bg-[#1e293b]/50 transition-colors group">
@@ -117,7 +120,16 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         )}
       </div>
 
-      <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 text-center">
+      {/* Footer / Scroll Hint */}
+      <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 flex flex-col items-center gap-2">
+        {filteredReports.length > 5 && (
+          <div className="flex items-center gap-1.5 animate-bounce mb-1">
+            <MousePointer2 className="w-3 h-3 text-blue-500 rotate-180" />
+            <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest">
+              Scroll for more
+            </span>
+          </div>
+        )}
         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em]">
           Updating in real-time
         </p>
