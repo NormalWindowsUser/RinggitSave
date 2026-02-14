@@ -53,7 +53,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </span>
       </div>
 
-      {/* Search Container */}
+      {/* Search Input */}
       <div className="p-4 bg-white dark:bg-[#334155]">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
@@ -67,7 +67,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </div>
       </div>
 
-      {/* Reports List: No "View More", just full scrollable list */}
+      {/* Full List Container - Always shows all, scrolls after 5 items */}
       <div className="divide-y divide-slate-50 dark:divide-white/5 max-h-[480px] overflow-y-auto custom-scrollbar">
         {filteredReports.length > 0 ? (
           filteredReports.map((r: any) => (
@@ -115,23 +115,22 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
               <Search className="w-10 h-10 text-slate-200" />
             </div>
             <p className="text-slate-400 text-xs font-black uppercase tracking-widest">No matching reports</p>
-            <p className="text-[10px] text-slate-300 mt-1">Try searching for something else</p>
           </div>
         )}
       </div>
 
-      {/* Footer / Scroll Visual Indicator */}
+      {/* Real-time Indicator and Scroll Hint */}
       <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 flex flex-col items-center gap-2">
         {filteredReports.length > 5 && (
           <div className="flex items-center gap-1.5 animate-bounce mb-1">
             <MousePointer2 className="w-3 h-3 text-blue-500 rotate-180" />
             <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest">
-              Scroll down to explore all reports
+              Scroll down to explore
             </span>
           </div>
         )}
         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em]">
-          Live Data Syncing
+          Live Price Feed Active
         </p>
       </div>
     </div>
