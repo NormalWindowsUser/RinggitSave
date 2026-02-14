@@ -5,7 +5,6 @@ import { supabase } from '../services/supabase';
 export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Utility to format time since report
   const formatTime = (ds: string) => {
     const diff = Math.floor((new Date().getTime() - new Date(ds).getTime()) / 60000);
     if (diff < 1) return 'Just now';
@@ -14,7 +13,6 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
     return `${Math.floor(diff / 1440)}d ago`;
   };
 
-  // Flagging system for data integrity (Practicality Metric)
   const handleFlagReport = async (reportId: string) => {
     const reason = window.prompt("Why are you flagging this report? (e.g., Fake Price, Wrong Store)");
     if (!reason) return;
@@ -32,7 +30,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
     if (error) {
       alert("Error submitting flag: " + error.message);
     } else {
-      alert("Report flagged for review. Thank you for keeping Ringgit-Save accurate!");
+      alert("Report flagged. Thank you for maintaining data integrity!");
     }
   };
 
@@ -44,7 +42,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
 
   return (
     <div className="bg-white dark:bg-[#334155] rounded-[2.5rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-xl shadow-slate-900/5 transition-all">
-      {/* Header with Activity Indicator */}
+      {/* Header */}
       <div className="p-6 border-b border-slate-50 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-[#1e293b]/50">
         <div className="flex items-center gap-2 font-black text-slate-700 dark:text-white uppercase tracking-wider text-sm">
           <Activity className="w-5 h-5 text-blue-500" /> 
@@ -55,13 +53,13 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </span>
       </div>
 
-      {/* Search Bar - Real-time Filtering */}
+      {/* Search Bar */}
       <div className="p-4 bg-white dark:bg-[#334155]">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
           <input
             type="text"
-            placeholder="Search items, stores, or locations..."
+            placeholder="Search items or stores..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#1e293b] border border-slate-100 dark:border-white/5 rounded-2xl text-sm dark:text-white outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
@@ -69,7 +67,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         </div>
       </div>
 
-      {/* Scrollable Report List - No buttons, automatic scroll after 5 items */}
+      {/* Reports List - Everything is here, scrolls after 5 items */}
       <div className="divide-y divide-slate-50 dark:divide-white/5 max-h-[480px] overflow-y-auto custom-scrollbar">
         {filteredReports.length > 0 ? (
           filteredReports.map((r: any) => (
@@ -121,18 +119,18 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
         )}
       </div>
 
-      {/* Footer & Scroll Indicator */}
+      {/* Footer / Scroll Indicator */}
       <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 flex flex-col items-center gap-2">
         {filteredReports.length > 5 && (
           <div className="flex items-center gap-1.5 animate-bounce mb-1">
             <MousePointer2 className="w-3 h-3 text-blue-500 rotate-180" />
             <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest">
-              Scroll down to view all activity
+              Scroll down for more
             </span>
           </div>
         )}
         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em]">
-          Community-Driven Intelligence
+          Live Data Syncing
         </p>
       </div>
     </div>
