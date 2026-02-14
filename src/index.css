@@ -2,22 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* KRACKATHON FINAL POLISH: 
-  Scale the app to 80% on Desktop for a "Pro" dashboard feel.
-  This ensures more data is visible in the Price Logs.
-*/
-@media (min-width: 1024px) {
+@layer base {
   html {
-    zoom: 0.8;
-    /* Fallback for Firefox */
-    -moz-transform: scale(0.8);
-    -moz-transform-origin: top center;
+    /* Set the transform origin to the top center */
+    transform: scale(0.8);
+    transform-origin: top center;
+    
+    /* Because scale(0.8) makes the element take up 20% less visual space 
+       but keeps the original "box" size, we adjust the width/height */
+    width: 125%; /* 1 / 0.8 = 1.25 */
+    height: 125%;
+    overflow-x: hidden;
   }
-}
-
-body {
-  @apply antialiased text-slate-900 dark:text-slate-100;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
 }
