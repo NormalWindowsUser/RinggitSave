@@ -26,33 +26,48 @@ export const Signup = () => {
 
     setLoading(true);
     
-    const { data, error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        captchaToken: captchaToken,
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          captchaToken: captchaToken,
+          // Optional: Redirect back to login or home after email confirmation
+          emailRedirectTo: window.location.origin + '/login',
+        }
+      });
+      
+      if (error) throw error;
+
+      if (data) {
+        alert("Account created successfully! Please check your email for a confirmation link (if enabled) or log in now.");
+        navigate('/login');
       }
-    });
-    
-    if (error) {
+    } catch (error: any) {
       alert(error.message);
-      setLoading(false);
       // Reset captcha on failure
       turnstileRef.current?.reset();
       setCaptchaToken(null);
-    } else {
-      alert("Account created! You can now log in.");
-      navigate('/login');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-50 dark:bg-[#1e293b] flex items-center justify-center p-4 overflow-y-auto transition-colors duration-300">
+    <div className="min-h-screen w-full bg-gray-50 dark:bg-[#1e293b] flex items-center justify-center p-4 transition-colors duration-300">
       <div className="max-w-md w-full bg-white dark:bg-[#334155] p-8 rounded-[2.5rem] shadow-2xl shadow-slate-900/10 dark:shadow-none border border-slate-100 dark:border-white/5 relative overflow-hidden">
         
-        <Link to="/" className="absolute top-8 right-8 text-slate-400 hover:text-emerald-500 transition-colors">
+        {/* Back Button */}
+        <Link 
+          to="/" 
+          className="absolute top-8 right-8 text-slate-400 hover:text-emerald-500 transition-colors z-20"
+          title="Back to Home"
+        >
           <ArrowLeft className="w-5 h-5" />
         </Link>
+
+        {/* Decorative Background Glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
 
         <div className="relative z-10">
           <div className="mb-10">
@@ -65,6 +80,7 @@ export const Signup = () => {
 
           <form onSubmit={handleSignup} className="space-y-6">
             <div className="space-y-4">
+              {/* Email Input */}
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Account Email</label>
                 <div className="relative group">
@@ -72,6 +88,7 @@ export const Signup = () => {
                   <input 
                     type="email" 
                     required 
+                    autoComplete="email"
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl dark:text-white focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-sm" 
                     placeholder="name@example.com" 
                     onChange={(e) => setEmail(e.target.value)} 
@@ -79,6 +96,7 @@ export const Signup = () => {
                 </div>
               </div>
 
+              {/* Password Input */}
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Choose Password</label>
                 <div className="relative group">
@@ -86,6 +104,8 @@ export const Signup = () => {
                   <input 
                     type="password" 
                     required 
+                    autoComplete="new-password"
+                    minLength={6}
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-white/5 rounded-2xl dark:text-white focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-sm" 
                     placeholder="Min. 6 characters" 
                     onChange={(e) => setPassword(e.target.value)} 
@@ -94,14 +114,17 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Turnstile Captcha - Same as ReportPrice/Login */}
+            {/* Turnstile Captcha Section */}
             <div className="flex flex-col items-center py-2">
               <Turnstile
                 ref={turnstileRef}
-                siteKey="1x00000000000000000000AA"
+                siteKey="1x00000000000000000000AA" // Replace with actual siteKey
                 onSuccess={(token) => setCaptchaToken(token)}
                 onExpire={() => setCaptchaToken(null)}
-                options={{ theme: 'auto' }}
+                options={{ 
+                  theme: 'auto',
+                  size: 'normal' 
+                }}
               />
             </div>
             
@@ -112,12 +135,16 @@ export const Signup = () => {
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale disabled:active:scale-100 flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /><span>Creating...</span></>
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Creating...</span>
+                  </>
                 ) : (
-                  'Create Account'
+                  <span>Create Account</span>
                 )}
               </button>
 
+              {/* Security Shield */}
               <div className="flex items-center justify-center gap-2 mt-4 opacity-40">
                 <ShieldCheck className="w-3 h-3 text-slate-400" />
                 <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">
@@ -126,9 +153,9 @@ export const Signup = () => {
               </div>
             </div>
 
-            <div className="pt-4 text-center">
+            <div className="pt-4 text-center border-t border-slate-100 dark:border-white/5">
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                Already have an account? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 font-black hover:underline">Log in</Link>
+                Already have an account? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 font-black hover:underline ml-1">Log in</Link>
               </p>
             </div>
           </form>
