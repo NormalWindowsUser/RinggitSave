@@ -176,7 +176,7 @@ export const LandingPage = () => {
                 onClick={() => setVisibleCount(prev => prev + 1000)}
                 className="w-full py-4 bg-gray-50 dark:bg-white/5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border-t border-gray-100 dark:border-white/5 flex items-center justify-center gap-1 hover:bg-gray-100 transition-colors"
               >
-                View More Reports <ChevronRight className="w-3 h-3" />
+                View More Contributions <ChevronRight className="w-3 h-3" />
               </button>
             )}
           </div>
