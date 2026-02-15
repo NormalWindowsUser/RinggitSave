@@ -35,35 +35,34 @@ export const MyActivity = () => {
   };
 
   const handleDelete = async (id: string) => {
-    // 1. Confirm with user
-    if (!window.confirm("Delete this report permanently?")) return;
+    // 1. Force the confirm to trigger
+    const confirmed = window.confirm("Delete this report permanently?");
+    if (!confirmed) return;
 
-    // 2. Set loading state for this specific item
     setDeletingId(id);
     
-    // 3. Database Action
-    const { error } = await supabase
-      .from('price_reports')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('price_reports')
+        .delete()
+        .eq('id', id);
 
-    if (error) {
+      if (error) throw error;
+
+      // Update UI locally
+      setReports(prev => prev.filter(r => r.id !== id));
+    } catch (error: any) {
       console.error('Delete error:', error.message);
       alert(`Delete Failed: ${error.message}`);
-      setDeletingId(null);
-    } else {
-      // 4. Update UI locally (Optimistic Update)
-      setReports(prev => prev.filter(r => r.id !== id));
+    } finally {
+      // Unlock the button regardless of success/fail
       setDeletingId(null);
     }
   };
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] dark:bg-[#1e293b]">
-      <div className="relative">
-        <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-        <div className="absolute inset-0 blur-xl bg-emerald-500/20 animate-pulse"></div>
-      </div>
+      <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
     </div>
   );
 
@@ -104,17 +103,14 @@ export const MyActivity = () => {
               <ShoppingBag className="w-8 h-8 text-slate-300" />
             </div>
             <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">No Data Found</p>
-            <button onClick={() => navigate('/report')} className="mt-6 text-emerald-500 font-black text-sm hover:underline">
-              Submit your first report
-            </button>
           </div>
         ) : (
           <div className="space-y-6">
             {reports.map((report) => (
               <div 
                 key={report.id} 
-                className={`group relative bg-white dark:bg-[#334155] p-6 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/5 transition-all 
-                  ${deletingId === report.id ? 'opacity-50 scale-95 pointer-events-none' : 'hover:scale-[1.02]'}`}
+                className={`group relative bg-white dark:bg-[#334155] p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 transition-all 
+                  ${deletingId === report.id ? 'opacity-50 scale-95' : 'hover:scale-[1.01]'}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-grow">
@@ -132,25 +128,25 @@ export const MyActivity = () => {
                       </div>
                       <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium gap-2">
                         <Calendar className="w-3.5 h-3.5" /> 
-                        {new Date(report.created_at).toLocaleDateString('en-MY', { 
-                          day: 'numeric', month: 'short', year: 'numeric' 
-                        })}
+                        {new Date(report.created_at).toLocaleDateString('en-MY')}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verified Price:</span>
-                      <p className="text-emerald-600 dark:text-emerald-400 font-black text-2xl tracking-tighter">
-                        RM {report.price.toFixed(2)}
-                      </p>
-                    </div>
+                    <p className="text-emerald-600 dark:text-emerald-400 font-black text-2xl tracking-tighter">
+                      RM {Number(report.price || 0).toFixed(2)}
+                    </p>
                   </div>
 
-                  <div className="flex flex-col items-center gap-4">
+                  {/* ACTION BUTTON - Fixed Z-index and relative positioning */}
+                  <div className="relative z-50 flex flex-col items-center gap-4">
                     <button 
-                      onClick={() => handleDelete(report.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card clicks if you add navigation later
+                        handleDelete(report.id);
+                      }}
                       disabled={deletingId === report.id}
-                      className="p-3 bg-slate-50 dark:bg-[#1e293b] rounded-2xl text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all disabled:opacity-50"
+                      className="p-4 bg-slate-50 dark:bg-[#1e293b] rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-all active:scale-90"
                       title="Delete report"
                     >
                       {deletingId === report.id ? (
@@ -159,23 +155,16 @@ export const MyActivity = () => {
                         <Trash2 className="w-5 h-5" />
                       )}
                     </button>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowUpRight className="w-5 h-5 text-slate-300" />
-                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-slate-200 group-hover:text-emerald-500 transition-colors" />
                   </div>
                 </div>
 
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                {/* Decoration Blur - Added pointer-events-none so it doesn't block the button */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </div>
             ))}
           </div>
         )}
-
-        <div className="text-center py-12 opacity-40">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
-            Ringgit-Save Activity Ledger
-          </p>
-        </div>
       </div>
     </div>
   );
