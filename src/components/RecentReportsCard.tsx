@@ -121,7 +121,7 @@ export const RecentReportsCard = ({ reports = [] }: { reports: any[] }) => {
 
       {/* Real-time Indicator and Scroll Hint */}
       <div className="p-4 bg-slate-50/50 dark:bg-[#1e293b]/50 border-t border-slate-50 dark:border-white/5 flex flex-col items-center gap-2">
-        {filteredReports.length > 5 && (
+        {filteredReports.length > 50 && (
           <div className="flex items-center gap-1.5 animate-bounce mb-1">
             <MousePointer2 className="w-3 h-3 text-blue-500 rotate-180" />
             <span className="text-[9px] text-blue-500 font-black uppercase tracking-widest">
